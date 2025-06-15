@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple HTML Page with Devicer Logging</title>
+    <script src="./snatch.js"></script>
+  </head>
+  <body>
+    <h1>Welcome to the Simple HTML Page</h1>
+    <p>This page is designed to log device information using Devicer.</p>
+    <div id="device-info">
+      <h2>Device Information</h2>
+      <p id="device-details">Loading device details...</p>
+    </div>
+  </body>
+  <script>
+    document.getElementById("device-details").innerText = JSON.stringify(document.dataset);
+  </script>
+</html>
