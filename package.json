@@ -1,26 +1,20 @@
 {
+  "version": "1.1.0",
+  "description": "An Open-Source Data Collection Script for Use With FP-Devicer",
   "name": "snatch.js",
-  "version": "1.0.0",
-  "description": "Open-Source Data Collection Tool for Use With FP-Devicer",
-  "main": "snatch.js",
+  "main": "dist/bundle.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack --mode=production --node-env=production",
+    "build:dev": "webpack --mode=development",
+    "watch": "webpack --watch"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/gatewaycorporate/fp-snatch.git"
-  },
-  "keywords": [
-    "data",
-    "collection",
-    "fingerprinting",
-    "identification",
-    "tracking"
-  ],
-  "author": "Samuel Roux, Stephen Perso, and one anonymous co-author",
-  "license": "SEE LICENSE IN license.txt",
-  "bugs": {
-    "url": "https://github.com/gatewaycorporate/fp-snatch/issues"
-  },
-  "homepage": "https://github.com/gatewaycorporate/fp-snatch#readme"
+  "devDependencies": {
+    "@babel/core": "^7.27.4",
+    "@babel/preset-env": "^7.27.2",
+    "babel-loader": "^10.0.0",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.3",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
+  }
 }
