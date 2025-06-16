@@ -4,11 +4,11 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Your Web Server</title>
-        <script defer src="bundle.js"></script>
+        <script src="bundle.js"></script>
     </head>
     <body>
         <h1>Hello, World!</h1>
-        <script>
+        <script defer>
           var Snatch = window["snatch"];
           var agent = new Snatch({url: "http://localhost", method: "POST"});
           agent.send();
