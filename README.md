@@ -19,7 +19,7 @@ After modifying the script to your desire, you can embed it into your web page w
 ```
 
 Your server located at `targetURL` should be configured to recieve and parse stringified JSON data in the following format for processing.
-```typescript
+```javascript
 type FPDataSet = {
   [key: string]: any;
 }

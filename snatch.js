@@ -87,8 +87,13 @@ dataset["audio"] = (function() {
     try {
         const audio = new Audio();
         return {
-            canPlayType: audio.canPlayType('audio/mpeg'),
-            codecs: audio.canPlayType('audio/ogg; codecs="vorbis"'),
+            codecSupport: {
+                codec_wav: audio.canPlayType('audio/wav; codecs="1"'),
+                codec_mp3: audio.canPlayType('audio/mpeg; codecs="mp3"'),
+                codec_vorbis: audio.canPlayType('audio/ogg; codecs="vorbis"'),
+                codec_opus: audio.canPlayType('audio/ogg; codecs="opus"'),
+                codec_flac: audio.canPlayType('audio/ogg; codecs="flac"'),
+            },
             sampleRate: audio.sampleRate || null
         };
     } catch (e) {
