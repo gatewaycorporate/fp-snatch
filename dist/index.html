@@ -7,11 +7,16 @@
         <script src="bundle.js"></script>
     </head>
     <body>
-        <h1>Hello, World!</h1>
+        <h1>FP-Snatch Demo</h1>
+        <p>FP-Snatch is an open-source data collection script to be run client-side in tandem with Gateway Corporate's FP-Devicer fingerprinting software.</p>
+        <h2>Your Data</h2>
         <script defer>
-          var Snatch = window["snatch"];
-          var agent = new Snatch({url: "http://localhost", method: "POST"});
-          agent.send();
+            var Snatch = window["snatch"];
+            var agent = new Snatch({url: "http://localhost", method: "POST"});
+            agent.send();
+            var p = document.createElement("p");
+            p.textContent = JSON.stringify(agent.dataset);
+            document.body.appendChild(p);
         </script>
     </body>
 </html>
