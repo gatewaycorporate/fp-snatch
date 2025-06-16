@@ -13,7 +13,7 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
         library: {
-            name: "snatch.js",
+            name: "snatch",
             type: "umd",
             export: "default"
         }
