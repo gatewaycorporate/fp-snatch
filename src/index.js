@@ -12,15 +12,29 @@ export default class Snatch {
      * This method collects various properties from the `navigator` object,
      */
     snatch() {
+        // Collect basic properties
         this.dataset.userAgent = navigator.userAgent;
         this.dataset.platform = navigator.platform;
         this.dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         this.dataset.language = navigator.language || navigator.userLanguage;
         this.dataset.languages = navigator.languages;
+
+        // Collect additional properties
         this.dataset.cookieEnabled = navigator.cookieEnabled;
         this.dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
         this.dataset.hardwareConcurrency = navigator.hardwareConcurrency;
         this.dataset.deviceMemory = navigator.deviceMemory || "unknown";
+        this.dataset.product = navigator.product;
+        this.dataset.productSub = navigator.productSub;
+        this.dataset.vendor = navigator.vendor;
+        this.dataset.vendorSub = navigator.vendorSub || "unknown";
+        this.dataset.appName = navigator.appName;
+        this.dataset.appVersion = navigator.appVersion;
+        this.dataset.appCodeName = navigator.appCodeName;
+        this.dataset.appMinorVersion = navigator.appMinorVersion || "unknown";
+        this.dataset.buildID = navigator.buildID || "unknown";
+
+        // Collect plugins and mime types
         this.dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
             name: plugin.name,
             version: plugin.version,
@@ -31,6 +45,8 @@ export default class Snatch {
             suffixes: mimeType.suffixes,
             description: mimeType.description
         }));
+
+        // Collect screen properties
         this.dataset.screen = {
             width: screen.width,
             height: screen.height,
@@ -41,6 +57,8 @@ export default class Snatch {
                 angle: screen.orientation.angle
             } : null
         }
+
+        // Collect High Entropy Values
         navigator.userAgentData.getHighEntropyValues([
             "architecture",
             "model",
