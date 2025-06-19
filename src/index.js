@@ -59,6 +59,7 @@ export default class Snatch {
         }
 
         // Collect High Entropy Values
+        var highEntropyValues = {};
         navigator.userAgentData.getHighEntropyValues([
             "architecture",
             "model",
@@ -66,9 +67,12 @@ export default class Snatch {
             "platformVersion",
             "uaFullVersion",
             "bitness"
-        ]).then(function(highEntropyValues) {
-            this.dataset.highEntropyValues = highEntropyValues;
+        ]).then(function(data) {
+            for (const key in data) {
+                highEntropyValues[key] = data[key];
+            }
         });
+        this.dataset.highEntropyValues = highEntropyValues;
     }
 
     /**
