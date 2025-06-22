@@ -1,5 +1,5 @@
 {
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "An Open-Source Data Collection Script for Use With FP-Devicer",
   "name": "snatch.js",
   "main": "dist/bundle.js",
