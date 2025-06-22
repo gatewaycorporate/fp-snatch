@@ -59,20 +59,25 @@ export default class Snatch {
         }
 
         // Collect High Entropy Values
-        var highEntropyValues = {};
-        navigator.userAgentData.getHighEntropyValues([
-            "architecture",
-            "model",
-            "platform",
-            "platformVersion",
-            "uaFullVersion",
-            "bitness"
-        ]).then(function(data) {
-            for (const key in data) {
-                highEntropyValues[key] = data[key];
-            }
-        });
-        this.dataset.highEntropyValues = highEntropyValues;
+        try {
+            var highEntropyValues = {};
+            navigator.userAgentData.getHighEntropyValues([
+                "architecture",
+                "model",
+                "platform",
+                "platformVersion",
+                "uaFullVersion",
+                "bitness"
+            ]).then(function(data) {
+                for (const key in data) {
+                    highEntropyValues[key] = data[key];
+                }
+            });
+            this.dataset.highEntropyValues = highEntropyValues;
+        } catch (error) {
+            console.warn("High Entropy Values not available:", error);
+            this.dataset.highEntropyValues = {};
+        }
     }
 
     /**
