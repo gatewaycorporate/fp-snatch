@@ -22,10 +22,50 @@ After modifying the script to your desire, you can embed it into your web page b
 <html>
 ```
 
-Your server located at `url` should be configured to recieve and parse stringified JSON data in the following format for processing.
+Your server located at `url` should be configured to recieve and parse stringified JSON data in one of the following formats for processing.
 ```javascript
-type FPDataSet = {
-  [key: string]: any;
+interface FPUserDataSet {
+  userAgent: string;
+  platform: string;
+  timezone: string;
+  language: string;
+  languages: string[];
+  cookieEnabled: boolean;
+  doNotTrack: string | boolean;
+  hardwareConcurrency: number;
+  deviceMemory: number | string;
+  product: string;
+  productSub: string;
+  vendor: string;
+  vendorSub: string;
+  appName: string;
+  appVersion: string;
+  appCodeName: string;
+  appMinorVersion: string;
+  buildID: string;
+  plugins: {
+    name: string;
+    description: string;
+  }[];
+  mimeTypes: {
+    type: string;
+    suffixes: string;
+    description: string;
+  }[];
+  screen: {
+    width: number;
+    height: number;
+    colorDepth: number;
+    pixelDepth: number;
+    orientation: {
+      type: string;
+      angle: number;
+    };
+  };
+  fonts: string[];
+  highEntropyValues: Record<string, string | number | boolean>;
 }
+
+type FPDataSet<T extends Record<string, any> = FPUserDataSet> = T;
 ```
 
