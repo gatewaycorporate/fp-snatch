@@ -4,14 +4,15 @@ export default class Snatch {
         this.options.method = options && options.method ? options.method : "POST";
         this.options.url = options && options.url ? options.url : "http://localhost/";
         this.dataset = {};
-        this.snatch();
+        
+        this.ready = this.snatch();
     }
 
     /**
      * Snatch the browser's fingerprinting data.
      * This method collects various properties from the `navigator` object,
      */
-    snatch() {
+    async snatch() {
         // Collect basic properties
         this.dataset.userAgent = navigator.userAgent;
         this.dataset.platform = navigator.platform;
@@ -63,24 +64,26 @@ export default class Snatch {
 
         // Collect High Entropy Values
         try {
-            var highEntropyValues = {};
-            navigator.userAgentData.getHighEntropyValues([
-                "architecture",
-                "model",
-                "platform",
-                "platformVersion",
-                "uaFullVersion",
-                "bitness"
-            ]).then(function(data) {
-                for (const key in data) {
-                    highEntropyValues[key] = data[key];
-                }
-            });
-            this.dataset.highEntropyValues = highEntropyValues;
+            if ('userAgentData' in navigator && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+                const data = await navigator.userAgentData.getHighEntropyValues([
+                    "architecture",
+                    "model",
+                    "platform",
+                    "platformVersion",
+                    "uaFullVersion",
+                    "bitness",
+                    "fullVersionList"   // bonus high-value field
+                ]);
+                this.dataset.highEntropyValues = { ...data };
+            } else {
+                this.dataset.highEntropyValues = {};
+            }
         } catch (error) {
             console.warn("High Entropy Values not available:", error);
             this.dataset.highEntropyValues = {};
         }
+
+        return this.dataset;
     }
 
     detectInstalledFonts() {
@@ -108,6 +111,8 @@ export default class Snatch {
         const detected = [];
 
         const body = document.body || document.getElementsByTagName('body')[0];
+        if (!body) return detected;
+
         const span = document.createElement('span');
         span.style.fontSize = testSize;
         span.innerHTML = testString;
@@ -115,22 +120,20 @@ export default class Snatch {
         span.style.left = '-9999px';
         span.style.visibility = 'hidden';
 
+        body.appendChild(span);
+
         const defaultDims = {};
         for (const base of baseFonts) {
             span.style.fontFamily = base;
-            body.appendChild(span);
             defaultDims[base] = { width: span.offsetWidth, height: span.offsetHeight };
-            body.removeChild(span);
         }
 
         for (const font of fontList) {
             let detectedFont = false;
             for (const base of baseFonts) {
                 span.style.fontFamily = `'${font}',${base}`;
-                body.appendChild(span);
                 const width = span.offsetWidth;
                 const height = span.offsetHeight;
-                body.removeChild(span);
 
                 if (width !== defaultDims[base].width || height !== defaultDims[base].height) {
                     detectedFont = true;
@@ -142,14 +145,17 @@ export default class Snatch {
             }
         }
 
+        body.removeChild(span);
         return detected;
     }
 
     /**
      * Send the collected dataset to the target URL.
-     * This method uses XMLHttpRequest to send the data as JSON.
+     * Now automatically waits for high-entropy data.
      */
-    send() {
+    async send() {
+        await this.ready;
+
         const xhr = new XMLHttpRequest();
         xhr.open(this.options.method, this.options.url, true);
         xhr.setRequestHeader("Content-Type", "application/json");
