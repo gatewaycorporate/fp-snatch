@@ -72,7 +72,7 @@ export default class Snatch {
                     "platformVersion",
                     "uaFullVersion",
                     "bitness",
-                    "fullVersionList"   // bonus high-value field
+                    "fullVersionList"
                 ]);
                 this.dataset.highEntropyValues = { ...data };
             } else {
