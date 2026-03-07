@@ -23,7 +23,7 @@ After modifying the script to your desire, you can embed it into your web page b
 ```
 
 Your server located at `url` should be configured to recieve and parse stringified JSON data in one of the following formats for processing.
-```javascript
+```typescript
 interface FPUserDataSet {
   userAgent: string;
   platform: string;
@@ -63,7 +63,16 @@ interface FPUserDataSet {
     };
   };
   fonts: string[];
-  highEntropyValues: Record<string, string | number | boolean>;
+  highEntropyValues: {
+    architecture: string;
+    bitness: string;
+    brands: { brand: string; version: string }[];
+    mobile: boolean;
+    model: string;
+    platform: string;
+    platformVersion: string;
+    uaFullVersion: string;
+  };
 }
 
 type FPDataSet<T extends Record<string, any> = FPUserDataSet> = T;
