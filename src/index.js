@@ -62,6 +62,11 @@ export default class Snatch {
         // Collect font information
         this.dataset.fonts = this.detectInstalledFonts();
 
+				// Collect canvas, WebGL, and audio fingerprints
+				this.dataset.canvas = await this.getCanvasFingerprint();
+				this.dataset.webgl = this.getWebGLFingerprint();
+				this.dataset.audio = await this.getAudioFingerprint();
+
         // Collect High Entropy Values
         try {
             if ('userAgentData' in navigator && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
@@ -84,6 +89,15 @@ export default class Snatch {
         }
 
         return this.dataset;
+    }
+
+		simpleHash(str) {
+        let hash = 5381;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        return (hash >>> 0).toString(36); // Short, deterministic, URL-safe
     }
 
     detectInstalledFonts() {
@@ -147,6 +161,115 @@ export default class Snatch {
 
         body.removeChild(span);
         return detected;
+    }
+
+    async getCanvasFingerprint() {
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return 'unsupported';
+
+            // Text layer (very high entropy)
+            canvas.width = 240;
+            canvas.height = 60;
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = '#f60';
+            ctx.fillRect(100, 1, 62, 20);
+            ctx.fillStyle = '#069';
+            ctx.font = '11pt "Times New Roman"';
+            const text = `Cwm fjordbank gly ${String.fromCharCode(55357, 56835)}`;
+            ctx.fillText(text, 2, 15);
+            ctx.fillStyle = 'rgba(102, 204, 0, 0.2)';
+            ctx.font = '18pt Arial';
+            ctx.fillText(text, 4, 45);
+
+            const textData = canvas.toDataURL();
+
+            // Geometry layer (adds winding + composite quirks)
+            canvas.width = 122;
+            canvas.height = 110;
+            ctx.globalCompositeOperation = 'multiply';
+            const colors = [['#f2f', 40, 40], ['#2ff', 80, 40], ['#ff2', 60, 80]];
+            for (const [color, x, y] of colors) {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 40, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = '#f9c';
+            ctx.arc(60, 60, 60, 0, Math.PI * 2);
+            ctx.arc(60, 60, 20, 0, Math.PI * 2);
+            ctx.fill('evenodd');
+
+            const geomData = canvas.toDataURL();
+            return this.simpleHash(textData + '||' + geomData);
+        } catch (e) {
+            console.warn('Canvas FP failed:', e);
+            return 'canvas_na';
+        }
+    }
+
+    getWebGLFingerprint() {
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl) return 'unsupported';
+
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR);
+            const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+
+            const fpString = [
+                vendor || '',
+                renderer || '',
+                gl.getParameter(gl.MAX_TEXTURE_SIZE),
+                gl.getParameter(gl.MAX_VERTEX_ATTRIBS),
+                gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+                (gl.getSupportedExtensions() || []).length
+            ].join('||');
+
+            return this.simpleHash(fpString);
+        } catch (e) {
+            console.warn('WebGL FP failed:', e);
+            return 'webgl_na';
+        }
+    }
+
+    async getAudioFingerprint() {
+        try {
+            const AudioContextCtor = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+            if (!AudioContextCtor) return 'unsupported';
+
+            const context = new AudioContextCtor(1, 44100 * 0.42, 44100);
+            const oscillator = context.createOscillator();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(10000, context.currentTime);
+
+            const compressor = context.createDynamicsCompressor();
+            compressor.threshold.value = -50;
+            compressor.knee.value = 40;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0;
+            compressor.release.value = 0.25;
+
+            oscillator.connect(compressor);
+            compressor.connect(context.destination);
+            oscillator.start(0);
+
+            const renderedBuffer = await context.startRendering();
+            const channelData = renderedBuffer.getChannelData(0);
+
+            // Stable slice + length (extremely consistent across runs)
+            let dataForHash = Array.from(channelData.slice(4500, 5000))
+                .map(v => v.toFixed(8))
+                .join(',');
+            dataForHash += `||${channelData.length}`;
+
+            return this.simpleHash(dataForHash);
+        } catch (e) {
+            console.warn('Audio FP failed:', e);
+            return 'audio_na';
+        }
     }
 
     /**
