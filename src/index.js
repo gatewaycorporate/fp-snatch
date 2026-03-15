@@ -102,21 +102,131 @@ export default class Snatch {
 
     detectInstalledFonts() {
         const fontList = [
-            "Arial", "Helvetica", "Times New Roman", "Courier New", "Verdana", "Georgia",
-            "Palatino", "Garamond", "Bookman", "Comic Sans MS", "Trebuchet MS", "Arial Black",
-            "Impact", "Lucida Console", "Lucida Sans Unicode", "Tahoma", "Century Gothic",
-            "Calibri", "Cambria", "Candara", "Consolas", "Corbel", "Constantia", "Franklin Gothic Medium",
-            "Gill Sans", "Futura", "Baskerville", "Didot", "Rockwell", "Bodoni", "Century Schoolbook",
-            "American Typewriter", "Andale Mono", "Optima", "Segoe UI", "Source Sans Pro",
-            "PT Sans", "Raleway", "Lato", "Roboto", "Open Sans", "Montserrat", "Ubuntu", "Noto Sans",
-            "Avenir", "Proxima Nova", "Museo Sans", "Merriweather", "Droid Sans", "Playfair Display",
-            "Josefin Sans", "Oswald", "Lobster", "Quicksand", "Karla", "Work Sans", "Inter", "Cabin",
-            "Arvo", "Zilla Slab", "Nunito", "Exo", "Rubik", "Muli", "Oxygen", "Inconsolata", "Anton",
-            "Pacifico", "Alegreya", "Cormorant", "EB Garamond", "Asap", "Titillium Web", "Varela Round",
-            "Abel", "Barlow", "Righteous", "Archivo", "Crimson Text", "Manrope", "Poppins", "Chivo",
-            "Teko", "Hind", "Baloo", "Heebo", "Fjalla One", "Maven Pro", "Catamaran", "Yanone Kaffeesatz",
-            "PT Serif", "Space Grotesk", "IBM Plex Sans", "Signika", "Questrial", "Bangers",
-            "Dancing Script", "Fredoka", "Press Start 2P", "Shadows Into Light"
+            // A
+            "Abel", "Abril Fatface", "Acme", "Al Bayan", "Alef", "Alegreya", "Alfa Slab One",
+            "Alice", "Amatic SC", "American Typewriter", "Amiri", "Andale Mono", "Anonymous Pro",
+            "Anton", "Antonio", "Apple SD Gothic Neo", "AppleGothic", "Architects Daughter",
+            "Archivo", "Archivo Black", "Archivo Narrow", "Aref Ruqaa", "Arial", "Arial Black",
+            "Arimo", "Arsenal", "Arvo", "Asap", "Atkinson Hyperlegible", "Audiowide", "Avenir",
+            // B
+            "B612", "Bad Script", "Baloo", "Baloo 2", "Baloo Da 2", "Bangers", "Barlow",
+            "Barlow Condensed", "Barlow Semi Condensed", "Baskerville", "Batang",
+            "Be Vietnam Pro", "Bebas Neue", "Berkshire Swash", "Biryani",
+            "BIZ UDGothic", "BIZ UDMincho", "BIZ UDPGothic", "BIZ UDPMincho",
+            "Bitter", "Black Han Sans", "Black Ops One", "Bodoni", "Bodoni Moda",
+            "Bookman", "Boogaloo", "Brygada 1918", "Bubblegum Sans", "Bungee",
+            // C
+            "Cabin", "Cabin Condensed", "Cairo", "Calibri", "Cambria", "Candara",
+            "Cantarell", "Catamaran", "Caveat", "Century Gothic", "Century Schoolbook",
+            "Ceviche One", "Chakra Petch", "Changa", "Chivo", "Chonburi",
+            "Cinzel", "Cinzel Decorative", "Clicker Script", "Coda", "Comfortaa",
+            "Comic Neue", "Comic Sans MS", "Commissioner", "Concert One", "Consolas",
+            "Constantia", "Cookie", "Corbel", "Corinthia", "Cormorant", "Courgette",
+            "Courier New", "Coustard", "Creepster", "Crimson Text", "Cuprum",
+            // D
+            "DM Mono", "DM Sans", "DM Serif Display", "DM Serif Text", "Damion",
+            "Dancing Script", "Days One", "Dela Gothic One", "Delius", "Didot",
+            "Diplomata", "Do Hyeon", "DotGothic16", "Dotum", "Dosis", "Droid Sans",
+            // E
+            "Eagle Lake", "East Sea Dokdo", "EB Garamond", "Economica", "Eczar",
+            "El Messiri", "Electrolize", "Encode Sans", "Epilogue", "Exo", "Exo 2",
+            // F
+            "Fahkwang", "Familjen Grotesk", "FangSong", "Fanwood Text", "Faustina",
+            "Figtree", "Fira Code", "Fira Mono", "Fira Sans", "Fira Sans Condensed",
+            "Fjalla One", "Forum", "Francois One", "Frank Ruhl Libre", "Franklin Gothic Medium",
+            "Fraunces", "Freckle Face", "Fredoka", "Fugaz One", "Futura",
+            // G
+            "Gamja Flower", "Garamond", "Geeza Pro", "Georgia", "Germania One", "GFS Didot",
+            "Gill Sans", "Gloria Hallelujah", "Gothic A1", "Gowun Batang", "Gowun Dodum",
+            "Graduate", "Grand Hotel", "Grandstander", "Gravitas One", "Great Vibes",
+            "Grenze Gotisch", "Gugi", "Gulim", "Gungsuh",
+            // H
+            "Hachi Maru Pop", "Halant", "Hammersmith One", "Happy Monkey", "Harmattan",
+            "Headland One", "Heebo", "Helvetica", "Helvetica Neue", "Hepta Slab",
+            "Hi Melody", "Hind", "Hind Siliguri", "Hiragino Kaku Gothic Pro",
+            "Hiragino Mincho Pro", "Hiragino Sans",
+            // I
+            "Ibarra Real Nova", "IBM Plex Mono", "IBM Plex Sans", "IBM Plex Serif",
+            "Imbue", "Impact", "Inclusive Sans", "Inconsolata", "Inknut Antiqua",
+            "Inria Sans", "Inria Serif", "Instrument Sans", "Instrument Serif",
+            "Inter", "Inter Tight",
+            // J
+            "JetBrains Mono", "Joan", "Josefin Sans", "Jost", "Jua", "Julius Sans One", "Jura",
+            // K
+            "K2D", "Kaisei Decol", "Kaisei HarunoUmi", "Kaisei Opti", "Kaisei Tokumin",
+            "KaiTi", "Kalam", "Kameron", "Kanit", "Karla", "Katibeh", "Kavoon", "Khand",
+            "Klee One", "Kosugi", "Kosugi Maru", "Kreon", "Krona One", "Kumbh Sans",
+            // L
+            "La Belle Aurore", "Laila", "Lalezar", "Lateef", "Lato", "League Gothic",
+            "League Spartan", "Leckerli One", "Lemon", "Lemonada", "Lexend", "Lexend Deca",
+            "Libre Baskerville", "Libre Caslon Text", "Libre Franklin", "Lilita One",
+            "Limelight", "Literata", "Livvic", "Lobster", "Lora",
+            "Lucida Console", "Lucida Grande", "Lucida Sans Unicode", "Luckiest Guy", "Lusitana",
+            // M
+            "M PLUS 1p", "M PLUS 2", "M PLUS Code Latin", "M PLUS Rounded 1c",
+            "Macondo", "Mada", "Malgun Gothic", "Manrope", "Marcellus", "Marck Script",
+            "Markazi Text", "Martel", "Martel Sans", "Marvel", "Mate", "Maven Pro",
+            "Meiryo", "Merriweather", "Merriweather Sans",
+            "Michroma", "Microsoft JhengHei", "Microsoft YaHei", "MingLiU", "Mirza", "Mitr",
+            "Modak", "Mohave", "Monda", "Montserrat", "Montserrat Alternates",
+            "MS Gothic", "MS Mincho", "MS PGothic", "MS PMincho",
+            "Mukta", "Muli", "Mulish", "Museo Sans", "MuseoModerno",
+            // N
+            "Nanum Brush Script", "Nanum Gothic", "Nanum Myeongjo", "Nanum Pen Script",
+            "News Cycle", "Newsreader", "Niramit", "Nixie One", "Nobile", "Noticia Text",
+            "Noto Kufi Arabic", "Noto Naskh Arabic", "Noto Nastaliq Urdu",
+            "Noto Sans", "Noto Sans Arabic", "Noto Sans Bengali", "Noto Sans Display",
+            "Noto Sans Greek", "Noto Sans HK", "Noto Sans JP", "Noto Sans KR",
+            "Noto Sans SC", "Noto Sans TC",
+            "Noto Serif", "Noto Serif JP", "Noto Serif KR", "Noto Serif SC", "Noto Serif TC",
+            "Nunito", "Nunito Sans",
+            // O
+            "Old Standard TT", "Oleo Script", "Open Sans", "Optima", "Orbitron",
+            "Oswald", "Outfit", "Overlock", "Overpass", "Ovo", "Oxanium", "Oxygen",
+            // P
+            "Pacifico", "Palatino", "Palanquin", "Passion One", "Patua One", "Paytone One",
+            "Permanent Marker", "Philosopher", "Piazzolla", "Play", "Playball",
+            "Playfair Display", "Playfair Display SC", "Plus Jakarta Sans",
+            "Podkova", "Poiret One", "Poppins", "Press Start 2P", "Pridi", "Prompt",
+            "Proza Libre", "Proxima Nova", "PT Mono", "PT Sans", "PT Sans Narrow", "PT Serif",
+            "Public Sans",
+            // Q
+            "Quattrocento", "Quattrocento Sans", "Questrial", "Quicksand",
+            // R
+            "Rajdhani", "Rakkas", "Raleway", "Rambla", "Ranchers", "Recursive",
+            "Red Hat Display", "Red Hat Text", "Reem Kufi", "REM", "Righteous",
+            "Roboto", "Roboto Condensed", "Roboto Mono", "Roboto Serif", "Roboto Slab",
+            "RocknRoll One", "Rockwell", "Rokkitt", "Ropa Sans", "Rosario", "Rowdies",
+            "Rozha One", "Rubik", "Ruda", "Rufina", "Russo One",
+            // S
+            "Sacramento", "Saira", "Sanchez", "Sansita", "Sarabun", "Satisfy",
+            "Sawarabi Gothic", "Sawarabi Mincho", "Scada", "Scheherazade New",
+            "Secular One", "Segoe UI", "Sen", "Shadows Into Light", "Signika",
+            "SimHei", "SimSun", "Single Day", "Song Myung", "Sora",
+            "Source Code Pro", "Source Sans Pro", "Source Serif 4",
+            "Space Grotesk", "Space Mono", "Spectral", "Sriracha", "Srisakdi",
+            "Staatliches", "Stick", "Suez One", "Sunflower", "Syne",
+            // T
+            "Tahoma", "Tajawal", "Tangerine", "Tauri", "Taviraj", "Teko", "Telex",
+            "Tenor Sans", "Tilt Neon", "Times New Roman", "Tinos", "Titan One",
+            "Titillium Web", "Tourney", "Train One", "Trebuchet MS", "Trirong",
+            "Truculenta", "Tsukimi Rounded", "Turret Road",
+            // U
+            "Ubuntu", "Ubuntu Condensed", "Ubuntu Mono", "Ultra", "Unbounded",
+            "Unica One", "Urbanist",
+            // V
+            "Varela", "Varela Round", "Verdana", "Vidaloka", "Viga",
+            "Vollkorn", "Vollkorn SC", "Voltaire", "VT323",
+            // W
+            "Wellfleet", "Wendy One", "Wix Madefor Display", "Work Sans",
+            // Y
+            "Yanone Kaffeesatz", "Yatra One", "Yeon Sung", "Yeseva One", "Yomogi", "Yrsa",
+            "Yu Gothic", "Yu Mincho", "Yuji Boku", "Yuji Mai", "Yuji Syuku", "Yusei Magic",
+            // Z
+            "ZCOOL KuaiLe", "ZCOOL QingKe HuangYou", "ZCOOL XiaoWei",
+            "Zen Antique", "Zen Antique Soft", "Zen Kaku Gothic Antique", "Zen Kaku Gothic New",
+            "Zen Kurenaido", "Zen Loop", "Zen Maru Gothic", "Zen Old Mincho",
+            "Zeyada", "Zilla Slab", "Zilla Slab Highlight"
         ];
 
         const baseFonts = ['monospace', 'sans-serif', 'serif'];
