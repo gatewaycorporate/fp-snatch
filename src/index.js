@@ -1,9 +1,280 @@
+const MAX_MOUSE_SAMPLES = 2000;
+const MAX_SCROLL_SAMPLES = 1000;
+const MAX_KEY_EVENTS = 500;
+const MOUSE_THROTTLE_MS = 20;
+const SCROLL_THROTTLE_MS = 33;
+
+function mean(values) {
+    if (!values.length) return 0;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function stddev(values, avg) {
+    if (!values.length) return 0;
+    const variance = values.reduce((sum, value) => sum + ((value - avg) ** 2), 0) / values.length;
+    return Math.sqrt(variance);
+}
+
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
+class BehavioralCollector {
+    constructor() {
+        this.startTime = this.now();
+        this.firstInteractionMs = null;
+        this.interactionEventCount = 0;
+        this.touchEventCount = 0;
+        this.hasTouchEvents = false;
+        this.mouseSamples = [];
+        this.scrollSamples = [];
+        this.keyDownTimes = new Map();
+        this.keyDwellTimes = [];
+        this.keyFlightTimes = [];
+        this.keydownCount = 0;
+        this.lastKeydownAt = null;
+        this.lastMouseAt = -Infinity;
+        this.lastScrollAt = -Infinity;
+        this.listeners = [];
+
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+            this.attach();
+        }
+    }
+
+    now() {
+        if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+            return performance.now();
+        }
+        return Date.now();
+    }
+
+    noteInteraction() {
+        this.interactionEventCount += 1;
+        if (this.firstInteractionMs === null) {
+            this.firstInteractionMs = Math.round(this.now() - this.startTime);
+        }
+    }
+
+    pushBounded(target, value, limit) {
+        if (target.length >= limit) {
+            target.shift();
+        }
+        target.push(value);
+    }
+
+    attachListener(target, name, handler) {
+        if (!target || typeof target.addEventListener !== 'function') return;
+        target.addEventListener(name, handler, { passive: true });
+        this.listeners.push(() => target.removeEventListener(name, handler, { passive: true }));
+    }
+
+    attach() {
+        this.attachListener(window, 'mousemove', (event) => {
+            const now = this.now();
+            if (now - this.lastMouseAt < MOUSE_THROTTLE_MS) return;
+            this.lastMouseAt = now;
+            this.noteInteraction();
+            this.pushBounded(this.mouseSamples, {
+                t: now,
+                x: event.clientX,
+                y: event.clientY,
+            }, MAX_MOUSE_SAMPLES);
+        });
+
+        this.attachListener(window, 'scroll', () => {
+            const now = this.now();
+            if (now - this.lastScrollAt < SCROLL_THROTTLE_MS) return;
+            this.lastScrollAt = now;
+            this.noteInteraction();
+            const scrollY = typeof window.scrollY === 'number'
+                ? window.scrollY
+                : (document.documentElement?.scrollTop || document.body?.scrollTop || 0);
+            this.pushBounded(this.scrollSamples, {
+                t: now,
+                y: scrollY,
+            }, MAX_SCROLL_SAMPLES);
+        });
+
+        this.attachListener(window, 'touchstart', () => {
+            this.noteInteraction();
+            this.hasTouchEvents = true;
+            this.touchEventCount += 1;
+        });
+
+        this.attachListener(window, 'keydown', (event) => {
+            const now = this.now();
+            this.noteInteraction();
+            if (this.keydownCount < MAX_KEY_EVENTS) {
+                this.keydownCount += 1;
+            }
+            if (this.lastKeydownAt !== null && this.keyFlightTimes.length < MAX_KEY_EVENTS) {
+                this.keyFlightTimes.push(now - this.lastKeydownAt);
+            }
+            this.lastKeydownAt = now;
+            if (!event.repeat && !this.keyDownTimes.has(event.code)) {
+                this.keyDownTimes.set(event.code, now);
+            }
+        });
+
+        this.attachListener(window, 'keyup', (event) => {
+            const now = this.now();
+            this.noteInteraction();
+            const keydownAt = this.keyDownTimes.get(event.code);
+            if (typeof keydownAt === 'number' && this.keyDwellTimes.length < MAX_KEY_EVENTS) {
+                this.keyDwellTimes.push(now - keydownAt);
+            }
+            this.keyDownTimes.delete(event.code);
+        });
+    }
+
+    computeMouseMetrics() {
+        if (this.mouseSamples.length < 2) {
+            return {
+                sampleCount: this.mouseSamples.length,
+                avgVelocityPxMs: 0,
+                velocityStdDev: 0,
+                straightnessRatio: 1,
+                avgAcceleration: 0,
+                hasMovement: false,
+            };
+        }
+
+        const velocities = [];
+        const accelerations = [];
+        let totalDistance = 0;
+
+        for (let index = 1; index < this.mouseSamples.length; index += 1) {
+            const previous = this.mouseSamples[index - 1];
+            const current = this.mouseSamples[index];
+            const deltaT = current.t - previous.t;
+            if (deltaT <= 0) continue;
+            const deltaX = current.x - previous.x;
+            const deltaY = current.y - previous.y;
+            const distance = Math.sqrt((deltaX ** 2) + (deltaY ** 2));
+            totalDistance += distance;
+            velocities.push(distance / deltaT);
+        }
+
+        for (let index = 1; index < velocities.length; index += 1) {
+            const deltaT = this.mouseSamples[index + 1].t - this.mouseSamples[index].t;
+            if (deltaT <= 0) continue;
+            accelerations.push(Math.abs(velocities[index] - velocities[index - 1]) / deltaT);
+        }
+
+        const avgVelocity = mean(velocities);
+        const velocityStdDev = stddev(velocities, avgVelocity);
+        const avgAcceleration = mean(accelerations);
+        const first = this.mouseSamples[0];
+        const last = this.mouseSamples[this.mouseSamples.length - 1];
+        const displacement = Math.sqrt(((last.x - first.x) ** 2) + ((last.y - first.y) ** 2));
+        const straightnessRatio = totalDistance > 0 ? clamp(displacement / totalDistance, 0, 1) : 1;
+
+        return {
+            sampleCount: this.mouseSamples.length,
+            avgVelocityPxMs: Number(avgVelocity.toFixed(4)),
+            velocityStdDev: Number(velocityStdDev.toFixed(4)),
+            straightnessRatio: Number(straightnessRatio.toFixed(4)),
+            avgAcceleration: Number(avgAcceleration.toFixed(4)),
+            hasMovement: totalDistance > 0,
+        };
+    }
+
+    computeKeyboardMetrics(collectionDurationMs) {
+        const avgDwell = mean(this.keyDwellTimes);
+        const avgFlight = mean(this.keyFlightTimes);
+        const estimatedWpm = collectionDurationMs > 0
+            ? (this.keydownCount / 5) / (collectionDurationMs / 60000)
+            : 0;
+
+        return {
+            keystrokeCount: this.keydownCount,
+            avgDwellMs: Number(avgDwell.toFixed(2)),
+            dwellStdDev: Number(stddev(this.keyDwellTimes, avgDwell).toFixed(2)),
+            avgFlightMs: Number(avgFlight.toFixed(2)),
+            flightStdDev: Number(stddev(this.keyFlightTimes, avgFlight).toFixed(2)),
+            estimatedWpm: Number(estimatedWpm.toFixed(2)),
+        };
+    }
+
+    computeScrollMetrics() {
+        if (this.scrollSamples.length < 2) {
+            return {
+                eventCount: this.scrollSamples.length,
+                avgVelocityPxMs: 0,
+                velocityStdDev: 0,
+                directionChangeCount: 0,
+                totalDistancePx: 0,
+            };
+        }
+
+        const velocities = [];
+        let directionChangeCount = 0;
+        let lastDirection = 0;
+        let totalDistancePx = 0;
+
+        for (let index = 1; index < this.scrollSamples.length; index += 1) {
+            const previous = this.scrollSamples[index - 1];
+            const current = this.scrollSamples[index];
+            const deltaT = current.t - previous.t;
+            if (deltaT <= 0) continue;
+            const deltaY = current.y - previous.y;
+            const direction = Math.sign(deltaY);
+            if (direction !== 0 && lastDirection !== 0 && direction !== lastDirection) {
+                directionChangeCount += 1;
+            }
+            if (direction !== 0) {
+                lastDirection = direction;
+            }
+            totalDistancePx += Math.abs(deltaY);
+            velocities.push(Math.abs(deltaY) / deltaT);
+        }
+
+        const avgVelocity = mean(velocities);
+        return {
+            eventCount: this.scrollSamples.length,
+            avgVelocityPxMs: Number(avgVelocity.toFixed(4)),
+            velocityStdDev: Number(stddev(velocities, avgVelocity).toFixed(4)),
+            directionChangeCount,
+            totalDistancePx: Number(totalDistancePx.toFixed(2)),
+        };
+    }
+
+    computeBehavioralMetrics() {
+        const collectionDurationMs = Math.max(0, Math.round(this.now() - this.startTime));
+        return {
+            mouse: this.computeMouseMetrics(),
+            keyboard: this.computeKeyboardMetrics(collectionDurationMs),
+            scroll: this.computeScrollMetrics(),
+            session: {
+                sessionDurationMs: collectionDurationMs,
+                timeToFirstInteractionMs: this.firstInteractionMs,
+                interactionEventCount: this.interactionEventCount,
+                touchEventCount: this.touchEventCount,
+            },
+            collectionDurationMs,
+            hasTouchEvents: this.hasTouchEvents,
+        };
+    }
+
+    destroy() {
+        while (this.listeners.length) {
+            const dispose = this.listeners.pop();
+            if (dispose) {
+                dispose();
+            }
+        }
+        this.keyDownTimes.clear();
+    }
+}
+
 export default class Snatch {
     constructor(options) {
         this.options = {};
         this.options.method = options && options.method ? options.method : "POST";
         this.options.url = options && options.url ? options.url : "http://localhost/";
         this.dataset = {};
+        this._behavioral = new BehavioralCollector();
         
         this.ready = this.snatch();
     }
@@ -87,6 +358,8 @@ export default class Snatch {
             console.warn("High Entropy Values not available:", error);
             this.dataset.highEntropyValues = {};
         }
+
+        this.dataset.behavioralMetrics = this._behavioral.computeBehavioralMetrics();
 
         return this.dataset;
     }
@@ -388,10 +661,15 @@ export default class Snatch {
      */
     async send() {
         await this.ready;
+        this.dataset.behavioralMetrics = this._behavioral.computeBehavioralMetrics();
 
         const xhr = new XMLHttpRequest();
         xhr.open(this.options.method, this.options.url, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(this.dataset));
+    }
+
+    destroy() {
+        this._behavioral.destroy();
     }
 }
