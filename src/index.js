@@ -3,6 +3,9 @@ const MAX_SCROLL_SAMPLES = 1000;
 const MAX_KEY_EVENTS = 500;
 const MOUSE_THROTTLE_MS = 20;
 const SCROLL_THROTTLE_MS = 33;
+const DEFAULT_BEHAVIORAL_MIN_DURATION_MS = 1500;
+const DEFAULT_BEHAVIORAL_MAX_WAIT_MS = 6000;
+const DEFAULT_BEHAVIORAL_POLL_MS = 100;
 
 function mean(values) {
     if (!values.length) return 0;
@@ -17,6 +20,10 @@ function stddev(values, avg) {
 
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
+}
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 class BehavioralCollector {
@@ -257,6 +264,14 @@ class BehavioralCollector {
         };
     }
 
+    getBehavioralState() {
+        return {
+            elapsedMs: Math.max(0, Math.round(this.now() - this.startTime)),
+            interactionEventCount: this.interactionEventCount,
+            hasTouchEvents: this.hasTouchEvents,
+        };
+    }
+
     destroy() {
         while (this.listeners.length) {
             const dispose = this.listeners.pop();
@@ -361,6 +376,37 @@ export default class Snatch {
 
         this.dataset.behavioralMetrics = this._behavioral.computeBehavioralMetrics();
 
+        return this.dataset;
+    }
+
+    async capture(options = {}) {
+        await this.ready;
+
+        const minBehavioralDurationMs = Number.isFinite(options.minBehavioralDurationMs)
+            ? Math.max(0, options.minBehavioralDurationMs)
+            : DEFAULT_BEHAVIORAL_MIN_DURATION_MS;
+        const maxBehavioralWaitMs = Number.isFinite(options.maxBehavioralWaitMs)
+            ? Math.max(minBehavioralDurationMs, options.maxBehavioralWaitMs)
+            : DEFAULT_BEHAVIORAL_MAX_WAIT_MS;
+        const pollIntervalMs = Number.isFinite(options.pollIntervalMs)
+            ? Math.max(16, options.pollIntervalMs)
+            : DEFAULT_BEHAVIORAL_POLL_MS;
+        const requireInteraction = options.requireInteraction === true;
+
+        while (true) {
+            const state = this._behavioral.getBehavioralState();
+            const reachedMinWindow = state.elapsedMs >= minBehavioralDurationMs;
+            const reachedMaxWindow = state.elapsedMs >= maxBehavioralWaitMs;
+            const hasInteraction = state.interactionEventCount > 0 || state.hasTouchEvents;
+
+            if (reachedMaxWindow || (reachedMinWindow && (!requireInteraction || hasInteraction))) {
+                break;
+            }
+
+            await sleep(Math.min(pollIntervalMs, Math.max(16, maxBehavioralWaitMs - state.elapsedMs)));
+        }
+
+        this.dataset.behavioralMetrics = this._behavioral.computeBehavioralMetrics();
         return this.dataset;
     }
 
@@ -660,13 +706,12 @@ export default class Snatch {
      * Now automatically waits for high-entropy data.
      */
     async send() {
-        await this.ready;
-        this.dataset.behavioralMetrics = this._behavioral.computeBehavioralMetrics();
+        const payload = await this.capture();
 
         const xhr = new XMLHttpRequest();
         xhr.open(this.options.method, this.options.url, true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify(this.dataset));
+        xhr.send(JSON.stringify(payload));
     }
 
     destroy() {
